@@ -7,27 +7,34 @@ import Characters from './components/Characters';
 const App = () => {
 
   const [ characters, setCharacters ] = useState([]);
+  const [ swapi, setSwapi ] = useState('https://swapi.co/api/people/');
   const [isLoading, setLoadingIndicator] = useState(true);
-  const [ pagination, setPagination ] = useState({})
+  
 
   useEffect(() => {
     axios.get('https://swapi.co/api/people/')
       .then((response) => {
         setCharacters(response.data.results);
-        setPagination({
-          next: response.data.results.next,
-          previous: response.data.results.previous
-        });
+        setSwapi(response.data.next);
         setLoadingIndicator(false);
       })
   }, [])
+
+  // useEffect(() => {
+  //   window.addEventListener('scroll', () => {
+  //     if ((document.body.clientHeight - window.pageYOffset) <= 500) {
+  //     }
+  //   });
+  // }, [])
 
   return (
     <Main onScroll={() => console.log('scrolled')}>
       <h1>
         <img src={logo} alt="Starwars Logo" />
       </h1>
-      <Characters data={characters} isLoading={isLoading} />
+      {
+        characters && <Characters data={characters} isLoading={isLoading} />
+      }
     </Main>
   );
 }
