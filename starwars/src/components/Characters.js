@@ -29,11 +29,26 @@ const List = styled.ul`
 
 const Item = styled.li`
 	list-style-type: none;
-	border: 2px solid red;
-	width: calc(25% - 2rem);
+	width: calc(25% - 4rem);
 	min-height: 300px;
-	border-radius: 10px;
-	margin-top: 4rem;
+	margin-top: 6rem;
+  position: relative;
+  border: 5px;
+  color: #FFF;
+  background: #000;
+  background-clip: padding-box;
+  border: solid -5px transparent;
+  border-radius: 1em;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: -1;
+    margin: -5px;
+    border-radius: inherit;
+    background: linear-gradient(to right, red, orange);
+  }
 `
 
 export default Characters;

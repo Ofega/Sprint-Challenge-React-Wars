@@ -10,3 +10,13 @@ html, body, #root {
   min-height: 100vh;
   font-family: sans-serif;
 }
+
+#root {
+  background-image: url('./assets/starwars-bg.png');
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+  z-index: -3;
+}

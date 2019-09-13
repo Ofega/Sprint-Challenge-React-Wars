@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
+import logo from './assets/starwars-logo.png'
 import Characters from './components/Characters';
 
 const App = () => {
@@ -17,7 +18,7 @@ const App = () => {
 
   return (
     <Main>
-      <h1>React Wars</h1>
+      <h1><img src={logo} alt="Starwars Logo" /></h1>
 
       <Characters data={characters} />
     </Main>
@@ -27,18 +28,11 @@ const App = () => {
 
 // Styling
 const Main = styled.div`
-  border: 2px solid red;
-  height: 100vh;
-  overflow-y: hidden;
+  height: 100%;
   max-width: 1140px;
   margin: 0 auto;
   padding: 3rem 2rem;
   font-size: 1.5rem;
-  background-image: url("img_parallax.jpg");
-  background-attachment: fixed;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
 
   h1 {
     text-align: center;
