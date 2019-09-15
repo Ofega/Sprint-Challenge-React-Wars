@@ -18,5 +18,4 @@ html, body, #root {
   background-repeat: no-repeat;
   background-size: cover;
   position: relative;
-  z-index: -3;
 }
