@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import LoadingIndicator from "./LoadingIndicator";
 
@@ -11,67 +11,72 @@ const Character = props => {
 		homeworld, 
 		hasStarted,
 		species, 
-		addPoints
+		addScore,
+		submitAnswer
 	} = props;
 
+
+	// Individaual Cards are managing their own state.
 	const [ inputValue, setInputValue ] = useState('');
-	const [ styleAnswer, setStyleAnswer ] = useState({
-		status: false,
-		answer: ''
-	});
+	const [ answer, setAnswer ] = useState('');
+	const [ checkAnswer, setCheckAnswer ] = useState(false);
 
-	// const gameState = JSON.parse(localStorage.getItem('gameState'));
 
+	// Set cards back to default when start button is clicked!
+	useEffect(() => {
+		setCheckAnswer(false);
+	}, [hasStarted])
+
+	
 	const handleInputChange = (e) => {
 		setInputValue(e.target.value);
 	}
 
 	const handleSubmit = (e) => {
+		const valueOfInput = inputValue.replace(/-|\s/g,"").toUpperCase();
+		const characterName = name.replace(/-|\s/g,"").toUpperCase();
+
 		e.preventDefault();
-		if(inputValue.replace(/-|\s/g,"").toUpperCase() === name.replace(/-|\s/g,"").toUpperCase()) {
-			setStyleAnswer({
-				status: true,
-				answer: 'right'
-			});
-			addPoints();
+
+		submitAnswer();
+		setCheckAnswer(true);
+
+		if( valueOfInput === characterName ) {
+			addScore();
+			setAnswer('right');
 		} else {
-			setStyleAnswer({
-				status: true,
-				answer: 'wrong'
-			});
+			setAnswer('wrong');
 		}
+
+		setInputValue('');
 	}
 
 	return (
 		<Item>
 			<div className="content-wrapper">
 				{
-					!styleAnswer.status ?
-						<div>
-							{
-								hasStarted ?
-									<>
-										<div className="character-stats">
-											<p>HAIR COLOR: <span>{hair_color}</span></p>	
-											<p>SKIN COLOR: <span>{skin_color}</span></p>	
-											<p>GENDER: <span>{gender}</span></p>	
-											<p>SPECIES: <span>{species}</span></p>	
-											<p>HOME WORLD: <span>{homeworld}</span></p>	
-										</div>
-										<form onSubmit={handleSubmit}>
-											<input type="text" onChange={handleInputChange} value={inputValue} />
-										</form>
-									</>
-								: null
-							}
-						</div> 
-					:
-						<div className="show-answer">
-							<h3>{styleAnswer.answer === 'right' ? 'You win!' : 'You lose!'}</h3>
-							<p>The Answer is <span>{name.toUpperCase()}</span></p>
-							<p className="score-addition">{styleAnswer.answer === 'right' ? '+1' : '+0'}</p>
-						</div>
-				}
+					hasStarted ?
+						checkAnswer === false ?
+							<div>
+								<div className="character-stats">
+									<p>HAIR COLOR: <span>{hair_color}</span></p>	
+									<p>SKIN COLOR: <span>{skin_color}</span></p>	
+									<p>GENDER: <span>{gender}</span></p>	
+									<p>SPECIES: <span>{species}</span></p>	
+									<p>HOME WORLD: <span>{homeworld}</span></p>	
+								</div>
+								<form onSubmit={handleSubmit}>
+									<input type="text" onChange={handleInputChange} value={inputValue} />
+								</form>
+							</div> 
+						:
+							<div className="show-answer">
+								<h3>{answer === 'right' ? 'You win!' : 'You lose!'}</h3>
+								<p>The Answer is <span>{name.toUpperCase()}</span></p>
+								<p className="score-addition">{answer === 'right' ? '+1' : '+0'}</p>
+							</div>
+					: null
+			}
 			</div>
 		</Item>
 	)
@@ -81,8 +86,11 @@ const Character = props => {
 const Characters = props => {
 	const { 
 		data, 
+		error,
 		isLoading,
-		addPoints,
+		submitAnswer,
+		addScore,
+		cards_limit,
 		hasStarted
 	} = props;
 	
@@ -91,18 +99,22 @@ const Characters = props => {
 			{ 
 				isLoading ? 
 					<LoadingIndicator /> :
-					data.slice(0, 9)
-						.map(({ name, hair_color, skin_color, gender, homeworld, species }, index) => <Character 
-							key={index} 
-							name={name}
-							gender={gender} 
-							species={species} 
-							homeworld={homeworld} 
-							hair_color={hair_color}
-							skin_color={skin_color}
-							hasStarted={hasStarted}
-							addPoints={addPoints}
-						/>) 
+						error ?
+							<Error>Seems like the server is down. Please refresh the page :)</Error>
+						: 
+							data.slice(0, cards_limit)
+								.map(({ name, hair_color, skin_color, gender, homeworld, species }, index) => <Character 
+									key={index} 
+									name={name}
+									gender={gender} 
+									species={species} 
+									homeworld={homeworld} 
+									hair_color={hair_color}
+									skin_color={skin_color}
+									hasStarted={hasStarted}
+									addScore={addScore}
+									submitAnswer={submitAnswer}
+								/>) 
 			}
 		</List>
 	)
@@ -110,6 +122,19 @@ const Characters = props => {
 
 
 // Styling
+
+const Error = styled.h2`
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  max-width: 500px;
+  color: #fff;
+  line-height: 1.4;
+  margin: 0 auto;
+  text-align: center;
+  font-size: 3rem;
+`
+
 const List = styled.ul`
 	list-style-type: none;
 	display: flex;
@@ -188,18 +213,6 @@ const Item = styled.li`
 		justify-content: space-between;
 		height: 100%;
 
-		// &:before {
-		// 	content: '';
-    // 	position: absolute;
-		// 	top: 0;
-		// 	left: 0;
-		// 	right: 0;
-		// 	bottom: 0;
-		// 	background: #000;
-		// 	z-index: 3;
-		// 	border-radius: 1em;
-		// }
-
 		& > div {
 			width: 100%;
 			height: 100%;
@@ -244,8 +257,8 @@ const Item = styled.li`
 
 	.show-answer {
 		text-align: center; 
-		-webkit-animation: slide-in-bottom 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
-					animation: slide-in-bottom 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+		-webkit-animation: slide-in-bottom .5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+					animation: slide-in-bottom .5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 				
 		@keyframes slide-in-bottom {
 			0% {
@@ -272,8 +285,8 @@ const Item = styled.li`
 			
 			&.score-addition {
 				font-size: 15rem;
-				-webkit-animation: scale-in-center 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
-								animation: scale-in-center 1s cubic-bezier(0.250, 0.460, 0.450, 0.940) 1s both;
+				-webkit-animation: scale-in-center .5s cubic-bezier(0.250, 0.460, 0.450, 0.940) .5s both;
+								animation: scale-in-center .5s cubic-bezier(0.250, 0.460, 0.450, 0.940) .5s both;
 				
 				@keyframes scale-in-center {
 					0% {
