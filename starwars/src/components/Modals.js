@@ -52,10 +52,10 @@ export const LevelEndModal = props => {
 }
 
 export const GoodByeModal = props => {
-    const { endGame, resetGame, finalEnd, minPassScore, doneWithLevel, gameScore, gameLevel } = props;
+    const { endGame, resetGame, finalEnd, doneWithLevel, gameScore, gameLevel } = props;
 
     return (
-        doneWithLevel && finalEnd && gameScore >= minPassScore ?
+        doneWithLevel && finalEnd ?
             <Modal>
                 <div className="modal-container">
                     <div className="text-container">

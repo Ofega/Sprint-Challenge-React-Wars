@@ -19,7 +19,9 @@ const App = () => {
     previousScore: 0,
     level: 1,
     currentCharacters: swapi,
-    hasStarted: false
+    hasStarted: false,
+    doneWithLevel: false,
+    min_score: 6
   };
 
   // Initialize App data state
@@ -30,11 +32,8 @@ const App = () => {
 
   // Initialize Game State
   const [ gameEngine, setGameEngine ] = useState(initialState);
-
   const [ nextPage, setNextPage ] = useState(swapi);
-  const [ doneWithLevel, setDoneWithLevel ] = useState(false);
   const [ finalEnd, setFinalEnd ] = useState(false);
-  const [ minPassScore, setMinPassScore ] = useState(MIN_SCORE);
   const [ answeredCards, setAnsweredCards ] = useState(howManyAnsweredCards);
 
 
@@ -43,33 +42,35 @@ const App = () => {
     setGameEngine({
       ...gameEngine,
       hasStarted: true,
+      min_score: gameEngine.min_score,
       previousScore: gameEngine.currentScore
     })
   }
 
   // End Game when button in modal is clicked!
   const endGame = () => {
-    setDoneWithLevel(!doneWithLevel);
     setGameEngine({
       previousScore: 0,
       currentScore: 0,
       level: 1,
       currentCharacters: swapi,
-      hasStarted: false
+      hasStarted: false,
+      min_score: 6,
+      doneWithLevel: false
     });
-    setMinPassScore(MIN_SCORE);
     setCharacters([]);
   }
 
 
   // Reset Game when button in modal is clicked!
   const resetGame = () => {
-    setDoneWithLevel(!doneWithLevel);
     setGameEngine({
       previousScore: gameEngine.previousScore,
       currentScore: gameEngine.previousScore,
       level: gameEngine.level,
+      min_score: gameEngine.min_score,
       currentCharacters: gameEngine.currentCharacters,
+      doneWithLevel: false,
       hasStarted: false
     });
     setCharacters([]);
@@ -78,15 +79,15 @@ const App = () => {
 
   // Update to new level is user is above minimum score
   const changeLevel = () => {
-    setDoneWithLevel(!doneWithLevel);
     setGameEngine({
       previousScore: gameEngine.previousScore,
       currentScore: gameEngine.currentScore,
       level: gameEngine.level + 1,
       currentCharacters: nextPage,
-      hasStarted: false
+      hasStarted: false,
+      doneWithLevel: false,
+      min_score: gameEngine.min_score + MIN_SCORE,
     });
-    setMinPassScore(minPassScore + MIN_SCORE);
     setCharacters([]);
   }
 
@@ -141,10 +142,13 @@ const App = () => {
   useEffect(() => {
     if(answeredCards === CARDS_LIMIT) {
       window.scrollTo(0, 0);
-      setDoneWithLevel(!doneWithLevel);
       setAnsweredCards(0);
+      setGameEngine({
+        ...gameEngine,
+        doneWithLevel: true
+      })
     }
-  }, [answeredCards, doneWithLevel])
+  }, [answeredCards, gameEngine])
 
 
   // Everytime the array variable changes, update localStorage with the new values
@@ -163,7 +167,7 @@ const App = () => {
 
   // Get Data from the API
   useEffect(() => { 
-    if(gameEngine.level === 3) {
+    if(gameEngine.level === 3 && (gameEngine.currentScore >= gameEngine.min_score)) {
       // If game level is 3, the end game. Don't do any fetch.
       setFinalEnd(true);
     } 
@@ -212,7 +216,7 @@ const App = () => {
       setLoadingIndicator(false);
     }
 
-  }, [gameEngine.currentCharacters, characters, gameEngine.level])
+  }, [gameEngine.currentCharacters, gameEngine.currentScore, gameEngine.min_score, characters, gameEngine.level])
   
 
   return (
@@ -224,7 +228,7 @@ const App = () => {
       { !isLoading && !error ? 
           <ScorePanel 
             startGame={startGame} 
-            minPassScore={minPassScore}
+            minPassScore={gameEngine.min_score}
             hasStarted={gameEngine.hasStarted} 
             gameScore={gameEngine.currentScore} 
             gameLevel={gameEngine.level} 
@@ -239,7 +243,7 @@ const App = () => {
             isLoading={isLoading} 
             hasStarted={gameEngine.hasStarted} 
             addScore={addScore} 
-            doneWithLevel={doneWithLevel}
+            doneWithLevel={gameEngine.doneWithLevel}
             submitAnswer={submitAnswer} 
             toggleAnswered={toggleAnswered}
           /> 
@@ -252,8 +256,8 @@ const App = () => {
         changeLevel={changeLevel}
         gameScore={gameEngine.currentScore} 
         gameLevel={gameEngine.level} 
-        doneWithLevel={doneWithLevel}
-        minPassScore={minPassScore} 
+        doneWithLevel={gameEngine.doneWithLevel}
+        minPassScore={gameEngine.min_score} 
       />
 
       <GoodByeModal 
@@ -262,7 +266,7 @@ const App = () => {
         finalEnd={finalEnd}
         gameScore={gameEngine.currentScore} 
         gameLevel={gameEngine.level} 
-        doneWithLevel={doneWithLevel} 
+        doneWithLevel={gameEngine.doneWithLevel} 
       />
     </Main>
   );
