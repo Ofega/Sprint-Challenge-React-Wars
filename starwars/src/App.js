@@ -12,6 +12,7 @@ const App = () => {
   const MIN_SCORE = 6;
   const CARDS_LIMIT = 9;
   const swapi = 'https://swapi.co/api/people/';
+  const characterArray = JSON.parse(localStorage.getItem('characters')) || [];
   const howManyAnsweredCards = JSON.parse(localStorage.getItem('answeredCards')) || 0;
   const initialState = JSON.parse(localStorage.getItem('gameState')) || {
     currentScore: 0,
@@ -22,15 +23,17 @@ const App = () => {
   };
 
   // Initialize App data state
-  const [ characters, setCharacters ] = useState([]);
+  const [ characters, setCharacters ] = useState(characterArray);
   const [ error, setError ] = useState(false);
   const [ isLoading, setLoadingIndicator ] = useState(true);
 
+
   // Initialize Game State
+  const [ gameEngine, setGameEngine ] = useState(initialState);
+
   const [ nextPage, setNextPage ] = useState(swapi);
   const [ doneWithLevel, setDoneWithLevel ] = useState(false);
   const [ finalEnd, setFinalEnd ] = useState(false);
-  const [ gameEngine, setGameEngine ] = useState(initialState);
   const [ minPassScore, setMinPassScore ] = useState(MIN_SCORE);
   const [ answeredCards, setAnsweredCards ] = useState(howManyAnsweredCards);
 
@@ -53,8 +56,9 @@ const App = () => {
       level: 1,
       currentCharacters: swapi,
       hasStarted: false
-    })
-    setMinPassScore(MIN_SCORE)
+    });
+    setMinPassScore(MIN_SCORE);
+    setCharacters([]);
   }
 
 
@@ -67,7 +71,8 @@ const App = () => {
       level: gameEngine.level,
       currentCharacters: gameEngine.currentCharacters,
       hasStarted: false
-    })
+    });
+    setCharacters([]);
   }
 
 
@@ -80,8 +85,9 @@ const App = () => {
       level: gameEngine.level + 1,
       currentCharacters: nextPage,
       hasStarted: false
-    })
+    });
     setMinPassScore(minPassScore + MIN_SCORE);
+    setCharacters([]);
   }
 
 
@@ -97,6 +103,21 @@ const App = () => {
       ...gameEngine,
       currentScore: gameEngine.currentScore + 1,
     })
+  }
+
+
+  // Each card keeps track of its toggled state
+  const toggleAnswered = id => {
+    const answeredCardArr = characters.map(item => {
+      if(item.id === id) {
+        return Object.assign({}, item, {
+          isAnswered: true
+        })
+      }
+      return item;
+    });
+
+		setCharacters(answeredCardArr);
   }
 
 
@@ -129,8 +150,15 @@ const App = () => {
   // Everytime the array variable changes, update localStorage with the new values
   useEffect(() => {
     localStorage.setItem('gameState', JSON.stringify(gameEngine));
+  }, [gameEngine])
+
+  useEffect(() => {
+    localStorage.setItem('characters', JSON.stringify(characters));
+  }, [characters])
+
+  useEffect(() => {
     localStorage.setItem('answeredCards', JSON.stringify(answeredCards));
-  }, [gameEngine, answeredCards])
+  }, [answeredCards])
  
 
   // Get Data from the API
@@ -139,44 +167,53 @@ const App = () => {
       // If game level is 3, the end game. Don't do any fetch.
       setFinalEnd(true);
     } 
+    
+    
+    if(localStorage.getItem('characters') === '[]') {
+      setLoadingIndicator(true);
+      axios.get(gameEngine.currentCharacters || swapi)
+        .then((response) => {
+          setNextPage(response.data.next);
 
-    setLoadingIndicator(true);
-    axios.get(gameEngine.currentCharacters || swapi)
-      .then((response) => {
-        setNextPage(response.data.next);
+          // return a new array of promises.
+          const newCharacterArray = response.data.results.map(async (item, index) => {      
+            const values = await Promise.all([axios.get(item.homeworld), axios.get(item.species)]);
+            const dataObject = values.map(item => item.data.name);
 
-        // return a new array of promises.
-        const newCharacterArray = response.data.results.map(async item => {      
-          const values = await Promise.all([axios.get(item.homeworld), axios.get(item.species)]);
-          const dataObject = values.map(item => item.data.name);
+            return {
+              id: index,
+              name: item.name,
+              hair_color: item.hair_color.toUpperCase(),
+              skin_color: item.skin_color.toUpperCase(),
+              gender: item.gender.toUpperCase(),
+              homeworld: dataObject[0].toUpperCase(),
+              species: dataObject[1].toUpperCase(),
+              isAnswered: false
+            }
+          })
 
-          return {
-            name: item.name,
-            hair_color: item.hair_color.toUpperCase(),
-            skin_color: item.skin_color.toUpperCase(),
-            gender: item.gender.toUpperCase(),
-            homeworld: dataObject[0].toUpperCase(),
-            species: dataObject[1].toUpperCase(),
-          }
+          // resolve promises and return shuffled data
+          Promise.all(newCharacterArray)
+            .then((response) => {
+              setCharacters(shuffle(response));
+              setLoadingIndicator(false);
+            })
+            .catch(() => {
+              setLoadingIndicator(false);
+              setError(true);
+            })
         })
+        .catch(() => {
+          setLoadingIndicator(false);
+          setError(true);
+        })
+    } else {
+      setCharacters(characters);
+      setLoadingIndicator(false);
+    }
 
-        // resolve promises and return shuffled data
-        Promise.all(newCharacterArray)
-          .then((response) => {
-            setCharacters(shuffle(response));
-            setLoadingIndicator(false);
-          })
-          .catch(() => {
-            setLoadingIndicator(false);
-            setError(true);
-          })
-      })
-      .catch(() => {
-        setLoadingIndicator(false);
-        setError(true);
-      })
-
-  }, [gameEngine.currentCharacters, gameEngine.level])
+  }, [gameEngine.currentCharacters, characters, gameEngine.level])
+  
 
   return (
     <Main>
@@ -204,6 +241,7 @@ const App = () => {
             addScore={addScore} 
             doneWithLevel={doneWithLevel}
             submitAnswer={submitAnswer} 
+            toggleAnswered={toggleAnswered}
           /> 
       }
 

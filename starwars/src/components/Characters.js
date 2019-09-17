@@ -4,6 +4,7 @@ import LoadingIndicator from "./LoadingIndicator";
 
 const Character = props => {
 	const { 
+		id,
 		name,
 		hair_color, 
 		skin_color, 
@@ -12,20 +13,15 @@ const Character = props => {
 		hasStarted,
 		species, 
 		addScore,
-		submitAnswer
+		submitAnswer,
+		isAnswered,
+		toggleAnswered
 	} = props;
 
 
 	// Individaual Cards are managing their own state.
 	const [ inputValue, setInputValue ] = useState('');
 	const [ answer, setAnswer ] = useState('');
-	const [ checkAnswer, setCheckAnswer ] = useState(false);
-
-
-	// Set cards back to default when start button is clicked!
-	useEffect(() => {
-		setCheckAnswer(false);
-	}, [hasStarted])
 
 	
 	const handleInputChange = (e) => {
@@ -37,9 +33,9 @@ const Character = props => {
 		const characterName = name.replace(/-|\s/g,"").toUpperCase();
 
 		e.preventDefault();
+		toggleAnswered(id);
 
 		submitAnswer();
-		setCheckAnswer(true);
 
 		if( valueOfInput === characterName ) {
 			addScore();
@@ -56,7 +52,7 @@ const Character = props => {
 			<div className="content-wrapper">
 				{
 					hasStarted ?
-						checkAnswer === false ?
+						!isAnswered ?
 							<div>
 								<div className="character-stats">
 									<p>HAIR COLOR: <span>{hair_color}</span></p>	
@@ -91,9 +87,10 @@ const Characters = props => {
 		submitAnswer,
 		addScore,
 		cards_limit,
-		hasStarted
+		hasStarted,
+		toggleAnswered
 	} = props;
-	
+
 	return (
 		<List>
 			{ 
@@ -102,9 +99,9 @@ const Characters = props => {
 						error ?
 							<Error>Seems like the server is down. Please refresh the page :)</Error>
 						: 
-							data.slice(0, cards_limit)
-								.map(({ name, hair_color, skin_color, gender, homeworld, species }, index) => <Character 
-									key={index} 
+							data.slice(0, cards_limit).map(({ id, name, hair_color, skin_color, gender, homeworld, species, isAnswered }) => <Character 
+									key={id} 
+									id={id}
 									name={name}
 									gender={gender} 
 									species={species} 
@@ -114,6 +111,8 @@ const Characters = props => {
 									hasStarted={hasStarted}
 									addScore={addScore}
 									submitAnswer={submitAnswer}
+									isAnswered={isAnswered}
+									toggleAnswered={toggleAnswered}
 								/>) 
 			}
 		</List>
